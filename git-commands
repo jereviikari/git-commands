@@ -7,38 +7,12 @@
 #     Ref: https://stackoverflow.com/questions/7866353/git-list-all-available-commands
 
 ################ Preparation ################
-# The line that divides the whole text into two: regular and custom commands
-dividing_line_number=$(git help -a |
-	grep -n 'git commands available from elsewhere on your $PATH' |
-	sed 's/[^0-9]*//g')
-
-whole_line_number=$(git help -a | wc -l)
 
 ############# Child Functions ###############
-function native_commands() {
-	git help -a |
-		head -n "$dividing_line_number" |
-		grep "^  [a-z]" |
-		tr ' ' '\n' |
-		grep -v "^$" |
-		while read line; do
-			echo -e "\e[00m$line\e[0m"
-		done
-}
-
-function custom_commands() {
-	git help -a |
-		tail -n $(($whole_line_number - $dividing_line_number)) |
-		grep "^  [a-z]" |
-		tr ' ' '\n' |
-		grep -v "^$" |
-		while read line; do
-			echo -e "\e[94m$line\e[0m"
-		done
-}
-
 function all_commands() {
-	native_commands && custom_commands
+	git help -a |
+		grep "^   [a-z]" |
+		cut -d' ' -f 4
 }
 
 ################ Main ################
@@ -74,12 +48,9 @@ function main() {
 usage="usage: $(basename "$0") [<options>]
 
 List all available git commands with help using fzf.
-Native git commands in white, \e[94mcustom git commands in blue\e[0m.
 
 where:
 	-h  show this help text
-	-n  list only the native git commands
-	-c  list only the custom git commands
 	-a  list all commands, which is also default"
 
 ############# Parse options ##############
@@ -87,14 +58,6 @@ while getopts ':hnca:' option; do
 	case "$option" in
 	h)
 		echo -e "$usage"
-		exit
-		;;
-	n)
-		main native_commands
-		exit
-		;;
-	c)
-		main custom_commands
 		exit
 		;;
 	a)
